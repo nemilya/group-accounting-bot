@@ -1,0 +1,4 @@
+group_accounting.db
+.env
+venv
+__pycache__
