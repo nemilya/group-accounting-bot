@@ -47,9 +47,14 @@ class Database:
         self.execute("UPDATE participants SET is_admin = 1 WHERE telegram_id = ?", (telegram_id,), commit=True)
 
     def add_training(self, date, time, location, fee):
-        sql = "INSERT INTO trainings (date, time, location, fee) VALUES (?, ?, ?, ?)"
-        self.execute(sql, (date, time, location, fee), commit=True)
-        return self.execute("SELECT last_insert_rowid()", fetchone=True)[0]
+        connection = self.connection
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO trainings (date, time, location, fee) VALUES (?, ?, ?, ?)", (date, time, location, fee))
+        connection.commit()
+        training_id = cursor.lastrowid
+        self.logger(f"New training_id: {training_id}")
+        connection.close()
+        return training_id
 
     def link_poll_to_training(self, training_id, poll_id):
         sql = "INSERT INTO training_polls (training_id, poll_id) VALUES (?, ?)"

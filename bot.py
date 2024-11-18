@@ -6,7 +6,7 @@ from aiogram.dispatcher.router import Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from config import API_TOKEN
+from config import API_TOKEN, GROUP_CHAT_ID
 from database import Database
 
 # Initialize Bot, Dispatcher, and FSM Storage
@@ -139,22 +139,22 @@ async def poll_fee_received(message: Message, state: FSMContext):
     poll_question = f"Тренировка {date} в {time} на {location}. Стоимость: {fee} руб."
     poll_options = ["Смогу", "Приду с другом", "Не смогу", "Не определился"]
 
-    # Retrieve all participants
-    participants = db.get_all_participants()
+    # Create poll
+    poll_question = f"Тренировка {date} в {time} на {location}. Стоимость: {fee} руб."
+    poll_options = ["Смогу", "Приду с другом", "Не смогу", "Не определился"]
 
-    # Send poll to each participant
-    for name, telegram_id in participants:
-        poll_message = await bot.send_poll(
-            telegram_id,
+    # Send poll to the group
+    poll_message = await bot.send_poll(
+        GROUP_CHAT_ID,
             question=poll_question,
             options=poll_options,
             is_anonymous=False,
             allows_multiple_answers=False
-        )
+    )
 
-        # Save poll to the database
-        training_id = db.add_training(date, time, location, fee)
-        db.link_poll_to_training(training_id, poll_message.poll.id)
+    # Save poll to the database
+    training_id = db.add_training(date, time, location, fee)
+    db.link_poll_to_training(training_id, poll_message.poll.id)
 
     await message.answer("Опрос создан и отправлен всем участникам!")
     await state.clear()
