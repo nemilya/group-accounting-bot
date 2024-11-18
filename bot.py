@@ -41,7 +41,7 @@ async def cmd_get_group_id(message: Message):
     chat_id = message.chat.id
     await message.answer(f"ID этой группы: {chat_id}")
 
-@dp.message(Command('start'))
+@dp.message(Command('start'), lambda message: message.chat.type == 'private')
 async def cmd_start(message: Message):
     participant = db.get_participant(message.from_user.id)
     if not participant:
@@ -86,7 +86,7 @@ async def start_poll_creation(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.answer("Введите дату для тренировки (например, 2024-11-18) или /cancel для выхода:")
     await state.set_state(PollCreation.waiting_for_date)
 
-@dp.message(PollCreation.waiting_for_date)
+@dp.message(PollCreation.waiting_for_date, lambda message: message.chat.type == 'private')
 async def poll_date_received(message: Message, state: FSMContext):
     if message.text.lower() == '/cancel':
         await state.clear()
@@ -96,7 +96,7 @@ async def poll_date_received(message: Message, state: FSMContext):
     await message.answer("Введите время для тренировки (например, 18:00) или /cancel для выхода:")
     await state.set_state(PollCreation.waiting_for_time)
 
-@dp.message(PollCreation.waiting_for_time)
+@dp.message(PollCreation.waiting_for_time, lambda message: message.chat.type == 'private')
 async def poll_time_received(message: Message, state: FSMContext):
     if message.text.lower() == '/cancel':
         await state.clear()
@@ -106,7 +106,7 @@ async def poll_time_received(message: Message, state: FSMContext):
     await message.answer("Введите место для тренировки (например, спортивный зал) или /cancel для выхода:")
     await state.set_state(PollCreation.waiting_for_location)
 
-@dp.message(PollCreation.waiting_for_location)
+@dp.message(PollCreation.waiting_for_location, lambda message: message.chat.type == 'private')
 async def poll_location_received(message: Message, state: FSMContext):
     if message.text.lower() == '/cancel':
         await state.clear()
@@ -116,7 +116,7 @@ async def poll_location_received(message: Message, state: FSMContext):
     await message.answer("Введите стоимость тренировки (например, 500) или /cancel для выхода:")
     await state.set_state(PollCreation.waiting_for_fee)
 
-@dp.message(PollCreation.waiting_for_fee)
+@dp.message(PollCreation.waiting_for_fee, lambda message: message.chat.type == 'private')
 async def poll_fee_received(message: Message, state: FSMContext):
     if message.text.lower() == '/cancel':
         await state.clear()
@@ -165,7 +165,7 @@ async def start_payment_process(callback_query: CallbackQuery, state: FSMContext
     await callback_query.message.answer("Введите сумму для оплаты или /cancel для выхода:")
     await state.set_state(PaymentProcess.waiting_for_amount)
 
-@dp.message(PaymentProcess.waiting_for_amount)
+@dp.message(PaymentProcess.waiting_for_amount, lambda message: message.chat.type == 'private')
 async def payment_amount_received(message: Message, state: FSMContext):
     if message.text.lower() == '/cancel':
         await state.clear()
@@ -236,12 +236,12 @@ async def handle_poll_answer(poll_answer: PollAnswer):
             if db.add_payment(user_id, -fee, db.get_training_date(training_id)):
                 await bot.send_message(user_id, f"Вы записаны на тренировку. С вашего счета списано {fee} руб.")
 
-@dp.message(Command('balance'))
+@dp.message(Command('balance'), lambda message: message.chat.type == 'private')
 async def cmd_balance(message: Message):
     balance = db.calculate_balance(message.from_user.id)
     await message.answer(f"Ваш текущий баланс: {balance:.2f} руб.")
 
-@dp.message(Command('all_balances'))
+@dp.message(Command('all_balances'), lambda message: message.chat.type == 'private')
 async def cmd_all_balances(message: Message):
     if db.is_admin(message.from_user.id):
         report = db.get_all_balances()
@@ -249,7 +249,7 @@ async def cmd_all_balances(message: Message):
     else:
         await message.answer("Только администратор может выполнять эту команду.")
 
-@dp.message(Command('set_initial_balance'))
+@dp.message(Command('set_initial_balance'), lambda message: message.chat.type == 'private')
 async def cmd_set_initial_balance(message: Message):
     if db.is_admin(message.from_user.id):
         args = message.text.split(maxsplit=2)
