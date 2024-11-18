@@ -36,6 +36,11 @@ def create_inline_keyboard(buttons: list) -> InlineKeyboardMarkup:
     ])
     return keyboard
 
+@dp.message(Command('get_group_id'))
+async def cmd_get_group_id(message: Message):
+    chat_id = message.chat.id
+    await message.answer(f"ID этой группы: {chat_id}")
+
 @dp.message(Command('start'))
 async def cmd_start(message: Message):
     participant = db.get_participant(message.from_user.id)
@@ -73,6 +78,11 @@ async def process_check_balance_callback(callback_query: CallbackQuery):
 @router.callback_query(lambda c: c.data == 'create_poll')
 async def start_poll_creation(callback_query: CallbackQuery, state: FSMContext):
     await bot.answer_callback_query(callback_query.id)
+    participant = db.get_participant(callback_query.from_user.id)
+    if not participant:
+        await callback_query.message.answer("Вы не зарегистрированы. Пожалуйста, нажмите /start для регистрации.")
+        return
+
     await callback_query.message.answer("Введите дату для тренировки (например, 2024-11-18) или /cancel для выхода:")
     await state.set_state(PollCreation.waiting_for_date)
 
@@ -128,19 +138,25 @@ async def poll_fee_received(message: Message, state: FSMContext):
     # Create poll
     poll_question = f"Тренировка {date} в {time} на {location}. Стоимость: {fee} руб."
     poll_options = ["Смогу", "Приду с другом", "Не смогу", "Не определился"]
-    poll_message = await bot.send_poll(
-        message.chat.id,
-        question=poll_question,
-        options=poll_options,
-        is_anonymous=False,
-        allows_multiple_answers=False
-    )
 
-    # Save poll to the database
-    training_id = db.add_training(date, time, location, fee)
-    db.link_poll_to_training(training_id, poll_message.poll.id)
+    # Retrieve all participants
+    participants = db.get_all_participants()
 
-    await message.answer("Опрос создан успешно!")
+    # Send poll to each participant
+    for name, telegram_id in participants:
+        poll_message = await bot.send_poll(
+            telegram_id,
+            question=poll_question,
+            options=poll_options,
+            is_anonymous=False,
+            allows_multiple_answers=False
+        )
+
+        # Save poll to the database
+        training_id = db.add_training(date, time, location, fee)
+        db.link_poll_to_training(training_id, poll_message.poll.id)
+
+    await message.answer("Опрос создан и отправлен всем участникам!")
     await state.clear()
 
 @router.callback_query(lambda c: c.data == 'pay')
@@ -202,6 +218,10 @@ async def set_initial_balance_prompt(callback_query: CallbackQuery):
 
 @dp.poll_answer()
 async def handle_poll_answer(poll_answer: PollAnswer):
+    participant = db.get_participant(poll_answer.user.id)
+    if not participant:
+        return
+
     user_id = poll_answer.user.id
     poll_id = poll_answer.poll_id
     status_index = poll_answer.option_ids[0]
