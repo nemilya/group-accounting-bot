@@ -156,3 +156,7 @@ class Database:
             sql = "INSERT INTO initial_balances (participant_id, balance, date) VALUES (?, ?, date('now'))"
             self.execute(sql, (participant_id, balance), commit=True)
 
+    def get_all_participants(self):
+        sql = "SELECT name, telegram_id FROM participants"
+        return self.execute(sql, fetchall=True)
+
