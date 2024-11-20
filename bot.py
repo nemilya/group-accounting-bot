@@ -190,13 +190,22 @@ async def process_all_balances_callback(callback_query: CallbackQuery):
     else:
         await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
 
-@router.callback_query(lambda c: c.data == 'set_admin')
-async def process_set_admin_callback(callback_query: CallbackQuery):
-    if db.is_admin(callback_query.from_user.id):
-        await bot.answer_callback_query(callback_query.id)
-        await bot.send_message(callback_query.from_user.id, "Введите Telegram ID нового администратора в формате: /set_admin TelegramID")
+@dp.message(Command('set_admin'), lambda message: message.chat.type == 'private')
+async def cmd_set_admin(message: Message):
+    if db.is_admin(message.from_user.id):
+        args = message.text.split(maxsplit=1)
+        if len(args) < 2:
+            await message.answer("Формат: /set_admin TelegramID")
+            return
+        try:
+            new_admin_id = int(args[1])
+            db.set_admin(new_admin_id)
+            await message.answer("Администратор успешно добавлен.")
+            await bot.send_message(new_admin_id, "Вы назначены администратором.")
+        except ValueError:
+            await message.answer("Укажите корректный Telegram ID.")
     else:
-        await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
+        await message.answer("Только администратор может выполнять эту команду.")
 
 @router.callback_query(lambda c: c.data == 'list_participants')
 async def list_participants(callback_query: CallbackQuery):

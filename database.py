@@ -43,7 +43,6 @@ class Database:
         return result and result[0] == 1
 
     def set_admin(self, telegram_id):
-        self.execute("UPDATE participants SET is_admin = 0 WHERE is_admin = 1", commit=True)
         self.execute("UPDATE participants SET is_admin = 1 WHERE telegram_id = ?", (telegram_id,), commit=True)
 
     def add_training(self, date, time, location, fee):
