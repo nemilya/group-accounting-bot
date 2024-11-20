@@ -231,8 +231,15 @@ async def handle_poll_answer(poll_answer: PollAnswer):
     training_id = db.get_training_id_by_poll(poll_id)
     if training_id:
         db.update_registration(user_id, training_id, status_text)
-        if status_text in ['смогу', 'приду с другом']:
-            fee = db.get_training_fee(training_id)
+        fee = db.get_training_fee(training_id)
+        if status_text == 'смогу':
+            amount_to_deduct = fee
+        elif status_text == 'приду с другом':
+            amount_to_deduct = fee * 2
+        else:
+            amount_to_deduct = 0
+
+        if amount_to_deduct > 0:
             if db.add_payment(user_id, -fee, db.get_training_date(training_id)):
                 await bot.send_message(user_id, f"Вы записаны на тренировку. С вашего счета списано {fee} руб.")
 
