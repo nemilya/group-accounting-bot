@@ -53,13 +53,13 @@ async def cmd_start(message: Message):
     # Add buttons for various actions
     buttons = [
         ("Проверить баланс", "check_balance"),
-        ("Создать опрос", "create_poll"),
         ("Оплатить", "pay")
     ]
     
     # Add admin-specific buttons
     if db.is_admin(message.from_user.id):
         buttons.extend([
+            ("Создать опрос", "create_poll"),
             ("Баланс всех участников", "all_balances"),
             ("Сменить администратора", "set_admin"),
             ("Список участников", "list_participants"),
