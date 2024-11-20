@@ -207,6 +207,14 @@ async def cmd_set_admin(message: Message):
     else:
         await message.answer("Только администратор может выполнять эту команду.")
 
+@router.callback_query(lambda c: c.data == 'set_admin')
+async def handle_set_admin_callback(callback_query: CallbackQuery):
+    if db.is_admin(callback_query.from_user.id):
+        await bot.answer_callback_query(callback_query.id)
+        await bot.send_message(callback_query.from_user.id, "Чтобы добавить администратора, используйте команду:\n/set_admin TelegramID")
+    else:
+        await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
+
 @router.callback_query(lambda c: c.data == 'list_participants')
 async def list_participants(callback_query: CallbackQuery):
     if db.is_admin(callback_query.from_user.id):
