@@ -53,7 +53,7 @@ async def cmd_start(message: Message):
     # Add buttons for various actions
     buttons = [
         ("Проверить баланс", "check_balance"),
-        ("Оплатить", "pay")
+        ("Сообщить об оплате", "pay")
     ]
     
     # Add admin-specific buttons
