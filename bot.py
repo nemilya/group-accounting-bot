@@ -61,7 +61,7 @@ async def cmd_start(message: Message):
         buttons.extend([
             ("Создать опрос", "create_poll"),
             ("Баланс всех участников", "all_balances"),
-            ("Сменить администратора", "set_admin"),
+            ("Добавить администратора", "set_admin"),
             ("Список участников", "list_participants"),
             ("Установить начальный баланс", "set_initial_balance")
         ])
