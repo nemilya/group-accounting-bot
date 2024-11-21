@@ -241,10 +241,21 @@ async def set_initial_balance_prompt(callback_query: CallbackQuery):
 async def list_trainings(callback_query: CallbackQuery):
     if db.is_admin(callback_query.from_user.id):
         trainings = db.get_all_trainings()
-        training_list = "\n".join([
-            f"ID: {training_id}, Дата: {date}, Время: {time}, Место: {location}, Стоимость: {fee} руб., Средства списаны: {'Да' if is_funds_debited else 'Нет'}"
-            for training_id, date, time, location, fee, is_funds_debited in trainings
-        ])
+        training_list = []
+        for training_id, date, time, location, fee, is_funds_debited in trainings:
+            participants = db.execute(
+                "SELECT p.name, r.status FROM training_registrations r JOIN participants p ON r.participant_id = p.id WHERE r.training_id = ?",
+                (training_id,), fetchall=True
+            )
+            participant_list = ", ".join([
+                f"{name}{' (с другом)' if status == 'приду с другом' else ''}"
+                for name, status in participants if status in ['смогу', 'приду с другом']
+            ])
+            total_cost = sum(fee * (2 if status == 'приду с другом' else 1) for _, status in participants if status in ['смогу', 'приду с другом'])
+            training_list.append(
+                f"[{training_id}] {date}, {time}, {location}, {fee} руб. | Участники: {participant_list} | Итоговая стоимость: {total_cost} руб. | Средства списаны: {'Да' if is_funds_debited else 'Нет'}"
+            )
+        training_list = "\n".join(training_list)
         await bot.answer_callback_query(callback_query.id)
         await bot.send_message(callback_query.from_user.id, f"Список тренировок:\n{training_list}")
     else:
