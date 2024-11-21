@@ -232,7 +232,7 @@ async def list_participants(callback_query: CallbackQuery):
 async def set_initial_balance_prompt(callback_query: CallbackQuery):
     if db.is_admin(callback_query.from_user.id):
         await bot.answer_callback_query(callback_query.id)
-        await bot.send_message(callback_query.from_user.id, "Введите Telegram ID и начальный баланс в формате: /set_initial_balance TelegramID сумма")
+        await bot.send_message(callback_query.from_user.id, "Введите UserID и начальный баланс в формате: /set_initial_balance UserID сумма")
     else:
         await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
 
@@ -281,12 +281,12 @@ async def cmd_set_initial_balance(message: Message):
     if db.is_admin(message.from_user.id):
         args = message.text.split(maxsplit=2)
         if len(args) < 3:
-            await message.answer("Формат: /set_initial_balance TelegramID сумма")
+            await message.answer("Формат: /set_initial_balance UserID сумма")
             return
         try:
-            telegram_id = int(args[1])
+            user_id = int(args[1])
             balance = float(args[2])
-            db.set_initial_balance(telegram_id, balance)
+            db.set_initial_balance_by_user_id(user_id, balance)
             await message.answer("Начальный баланс установлен.")
         except ValueError:
             await message.answer("Укажите корректные данные.")

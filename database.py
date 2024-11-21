@@ -154,11 +154,9 @@ class Database:
             balance = payments
         return balance
 
-    def set_initial_balance(self, telegram_id, balance):
-        participant_id = self.get_participant_id(telegram_id)
-        if participant_id:
-            sql = "INSERT INTO initial_balances (participant_id, balance, date) VALUES (?, ?, date('now'))"
-            self.execute(sql, (participant_id, balance), commit=True)
+    def set_initial_balance_by_user_id(self, user_id, balance):
+        sql = "INSERT INTO initial_balances (participant_id, balance, date) VALUES (?, ?, date('now'))"
+        self.execute(sql, (user_id, balance), commit=True)
 
     def get_all_participants(self):
         sql = "SELECT name, id, telegram_id FROM participants"
