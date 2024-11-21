@@ -63,7 +63,8 @@ async def cmd_start(message: Message):
             ("Баланс всех участников", "all_balances"),
             ("Добавить администратора", "set_admin"),
             ("Список участников", "list_participants"),
-            ("Установить начальный баланс", "set_initial_balance")
+            ("Установить начальный баланс", "set_initial_balance"),
+            ("Список тренировок", "list_trainings")
         ])
 
     keyboard = create_inline_keyboard(buttons)
@@ -236,6 +237,19 @@ async def set_initial_balance_prompt(callback_query: CallbackQuery):
     else:
         await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
 
+@router.callback_query(lambda c: c.data == 'list_trainings')
+async def list_trainings(callback_query: CallbackQuery):
+    if db.is_admin(callback_query.from_user.id):
+        trainings = db.get_all_trainings()
+        training_list = "\n".join([
+            f"ID: {training_id}, Дата: {date}, Время: {time}, Место: {location}, Стоимость: {fee} руб."
+            for training_id, date, time, location, fee in trainings
+        ])
+        await bot.answer_callback_query(callback_query.id)
+        await bot.send_message(callback_query.from_user.id, f"Список тренировок:\n{training_list}")
+    else:
+        await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
+
 @dp.poll_answer()
 async def handle_poll_answer(poll_answer: PollAnswer):
     participant = db.get_participant(poll_answer.user.id)
@@ -293,10 +307,21 @@ async def cmd_set_initial_balance(message: Message):
     else:
         await message.answer("Только администратор может выполнять эту команду.")
 
+@dp.message(Command('list_trainings'), lambda message: message.chat.type == 'private')
+async def cmd_list_trainings(message: Message):
+    if db.is_admin(message.from_user.id):
+        trainings = db.get_all_trainings()
+        training_list = "\n".join([
+            f"ID: {training_id}, Дата: {date}, Время: {time}, Место: {location}, Стоимость: {fee} руб."
+            for training_id, date, time, location, fee in trainings
+        ])
+        await message.answer(f"Список тренировок:\n{training_list}")
+    else:
+        await message.answer("Только администратор может выполнять эту команду.")
+
 async def main():
     # Start polling
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
     asyncio.run(main())
-
