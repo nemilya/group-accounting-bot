@@ -242,8 +242,8 @@ async def list_trainings(callback_query: CallbackQuery):
     if db.is_admin(callback_query.from_user.id):
         trainings = db.get_all_trainings()
         training_list = "\n".join([
-            f"ID: {training_id}, Дата: {date}, Время: {time}, Место: {location}, Стоимость: {fee} руб."
-            for training_id, date, time, location, fee in trainings
+            f"ID: {training_id}, Дата: {date}, Время: {time}, Место: {location}, Стоимость: {fee} руб., Средства списаны: {'Да' if is_funds_debited else 'Нет'}"
+            for training_id, date, time, location, fee, is_funds_debited in trainings
         ])
         await bot.answer_callback_query(callback_query.id)
         await bot.send_message(callback_query.from_user.id, f"Список тренировок:\n{training_list}")

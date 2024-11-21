@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS trainings (
     date TEXT NOT NULL,
     time TEXT NOT NULL,
     location TEXT NOT NULL,
-    fee REAL NOT NULL
+    fee REAL NOT NULL,
+    is_funds_debited BOOLEAN DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS training_registrations (
