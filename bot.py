@@ -201,6 +201,7 @@ async def cmd_set_admin(message: Message):
             new_admin_user_id = int(args[1])
             db.set_admin_by_user_id(new_admin_user_id)
             await message.answer("Администратор успешно добавлен.")
+            await bot.send_message(new_admin_user_id, "Вы были назначены администратором.")
         except ValueError:
             await message.answer("Укажите корректный UserID.")
     else:
