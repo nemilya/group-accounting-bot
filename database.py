@@ -165,3 +165,26 @@ class Database:
     def get_all_trainings(self):
         sql = "SELECT id, date, time, location, fee, is_funds_debited FROM trainings"
         return self.execute(sql, fetchall=True)
+
+    def debit_funds_for_training(self, training_id):
+        training = self.execute("SELECT fee, is_funds_debited FROM trainings WHERE id = ?", (training_id,), fetchone=True)
+        if not training or training[1]:  # Если тренировка не найдена или средства уже списаны
+            return False
+
+        fee = training[0]
+        participants = self.execute(
+            "SELECT participant_id, status FROM training_registrations WHERE training_id = ?",
+            (training_id,), fetchall=True
+        )
+
+        for participant_id, status in participants:
+            if status in ['смогу', 'приду с другом']:
+                amount_to_deduct = fee * (2 if status == 'приду с другом' else 1)
+                self.execute(
+                    "INSERT INTO payments (participant_id, amount, date) VALUES (?, ?, date('now'))",
+                    (participant_id, -amount_to_deduct), commit=True
+                )
+
+        self.execute("UPDATE trainings SET is_funds_debited = 1 WHERE id = ?", (training_id,), commit=True)
+        return True
+

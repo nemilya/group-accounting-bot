@@ -276,17 +276,6 @@ async def handle_poll_answer(poll_answer: PollAnswer):
     training_id = db.get_training_id_by_poll(poll_id)
     if training_id:
         db.update_registration(user_id, training_id, status_text)
-        fee = db.get_training_fee(training_id)
-        if status_text == 'смогу':
-            amount_to_deduct = fee
-        elif status_text == 'приду с другом':
-            amount_to_deduct = fee * 2
-        else:
-            amount_to_deduct = 0
-
-        if amount_to_deduct > 0:
-            if db.add_payment(user_id, -fee, db.get_training_date(training_id)):
-                await bot.send_message(user_id, f"Вы записаны на тренировку. С вашего счета списано {fee} руб.")
 
 @dp.message(Command('balance'), lambda message: message.chat.type == 'private')
 async def cmd_balance(message: Message):
@@ -327,6 +316,24 @@ async def cmd_list_trainings(message: Message):
             for training_id, date, time, location, fee in trainings
         ])
         await message.answer(f"Список тренировок:\n{training_list}")
+    else:
+        await message.answer("Только администратор может выполнять эту команду.")
+
+@dp.message(Command('debit_funds'), lambda message: message.chat.type == 'private')
+async def cmd_debit_funds(message: Message):
+    if db.is_admin(message.from_user.id):
+        args = message.text.split(maxsplit=1)
+        if len(args) < 2:
+            await message.answer("Формат: /debit_funds TrainingID")
+            return
+        try:
+            training_id = int(args[1])
+            if db.debit_funds_for_training(training_id):
+                await message.answer("Средства успешно списаны за тренировку.")
+            else:
+                await message.answer("Не удалось списать средства. Возможно, они уже списаны.")
+        except ValueError:
+            await message.answer("Укажите корректный TrainingID.")
     else:
         await message.answer("Только администратор может выполнять эту команду.")
 
