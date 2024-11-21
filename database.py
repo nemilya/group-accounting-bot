@@ -42,8 +42,8 @@ class Database:
         result = self.execute(sql, (telegram_id,), fetchone=True)
         return result and result[0] == 1
 
-    def set_admin(self, telegram_id):
-        self.execute("UPDATE participants SET is_admin = 1 WHERE telegram_id = ?", (telegram_id,), commit=True)
+    def set_admin_by_user_id(self, user_id):
+        self.execute("UPDATE participants SET is_admin = 1 WHERE id = ?", (user_id,), commit=True)
 
     def add_training(self, date, time, location, fee):
         connection = self.connection

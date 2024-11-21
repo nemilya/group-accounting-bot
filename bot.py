@@ -195,15 +195,14 @@ async def cmd_set_admin(message: Message):
     if db.is_admin(message.from_user.id):
         args = message.text.split(maxsplit=1)
         if len(args) < 2:
-            await message.answer("Формат: /set_admin TelegramID")
+            await message.answer("Формат: /set_admin UserID")
             return
         try:
-            new_admin_id = int(args[1])
-            db.set_admin(new_admin_id)
+            new_admin_user_id = int(args[1])
+            db.set_admin_by_user_id(new_admin_user_id)
             await message.answer("Администратор успешно добавлен.")
-            await bot.send_message(new_admin_id, "Вы назначены администратором.")
         except ValueError:
-            await message.answer("Укажите корректный Telegram ID.")
+            await message.answer("Укажите корректный UserID.")
     else:
         await message.answer("Только администратор может выполнять эту команду.")
 
@@ -211,7 +210,7 @@ async def cmd_set_admin(message: Message):
 async def handle_set_admin_callback(callback_query: CallbackQuery):
     if db.is_admin(callback_query.from_user.id):
         await bot.answer_callback_query(callback_query.id)
-        await bot.send_message(callback_query.from_user.id, "Чтобы добавить администратора, используйте команду:\n/set_admin TelegramID")
+        await bot.send_message(callback_query.from_user.id, "Чтобы добавить администратора, используйте команду:\n/set_admin UserID")
     else:
         await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
 
