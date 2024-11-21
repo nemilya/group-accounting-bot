@@ -64,7 +64,8 @@ async def cmd_start(message: Message):
             ("Добавить администратора", "set_admin"),
             ("Список участников", "list_participants"),
             ("Установить начальный баланс", "set_initial_balance"),
-            ("Список тренировок", "list_trainings")
+            ("Список тренировок", "list_trainings"),
+            ("Списать средства за тренировку", "debit_funds")
         ])
 
     keyboard = create_inline_keyboard(buttons)
@@ -261,7 +262,13 @@ async def list_trainings(callback_query: CallbackQuery):
     else:
         await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
 
-@dp.poll_answer()
+@router.callback_query(lambda c: c.data == 'debit_funds')
+async def handle_debit_funds_callback(callback_query: CallbackQuery):
+    if db.is_admin(callback_query.from_user.id):
+        await bot.answer_callback_query(callback_query.id)
+        await bot.send_message(callback_query.from_user.id, "Введите ID тренировки для списания средств в формате: /debit_funds TrainingID")
+    else:
+        await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
 async def handle_poll_answer(poll_answer: PollAnswer):
     participant = db.get_participant(poll_answer.user.id)
     if not participant:
