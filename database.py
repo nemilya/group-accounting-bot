@@ -161,6 +161,6 @@ class Database:
             self.execute(sql, (participant_id, balance), commit=True)
 
     def get_all_participants(self):
-        sql = "SELECT name, telegram_id FROM participants"
+        sql = "SELECT name, id, telegram_id FROM participants"
         return self.execute(sql, fetchall=True)
 

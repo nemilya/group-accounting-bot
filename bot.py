@@ -220,8 +220,8 @@ async def list_participants(callback_query: CallbackQuery):
     if db.is_admin(callback_query.from_user.id):
         participants = db.get_all_participants()
         participant_list = "\n".join([
-            f"{name} - {telegram_id}" + (" (Администратор)" if db.is_admin(telegram_id) else "")
-            for name, telegram_id in participants
+            f"{name} - [{user_id}]" + (" (Администратор)" if db.is_admin(telegram_id) else "")
+            for name, user_id, telegram_id in participants
         ])
         await bot.answer_callback_query(callback_query.id)
         await bot.send_message(callback_query.from_user.id, f"Список участников:\n{participant_list}")
