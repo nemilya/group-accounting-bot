@@ -163,5 +163,5 @@ class Database:
         return self.execute(sql, fetchall=True)
 
     def get_all_trainings(self):
-        sql = "SELECT id, date, time, location, fee FROM trainings"
+        sql = "SELECT id, date, time, location, fee, is_funds_debited FROM trainings"
         return self.execute(sql, fetchall=True)
