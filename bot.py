@@ -269,7 +269,9 @@ async def handle_debit_funds_callback(callback_query: CallbackQuery):
         await bot.send_message(callback_query.from_user.id, "Введите ID тренировки для списания средств в формате: /debit_funds TrainingID")
     else:
         await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
+
 async def handle_poll_answer(poll_answer: PollAnswer):
+    print(f"Received poll answer from user {poll_answer.user.id}")
     participant = db.get_participant(poll_answer.user.id)
     if not participant:
         return
@@ -343,6 +345,9 @@ async def cmd_debit_funds(message: Message):
             await message.answer("Укажите корректный TrainingID.")
     else:
         await message.answer("Только администратор может выполнять эту команду.")
+
+# Register the poll answer handler
+dp.poll_answer.register(handle_poll_answer)
 
 async def main():
     # Start polling
