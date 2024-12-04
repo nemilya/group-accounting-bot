@@ -176,7 +176,17 @@ async def payment_amount_received(message: Message, state: FSMContext):
     try:
         amount = float(message.text)
         if db.add_payment(message.from_user.id, amount):
-            await message.answer("Оплата зарегистрирована.")
+            new_balance = db.calculate_balance(message.from_user.id)
+            await message.answer(f"Ваш баланс пополнен на {amount:.2f} руб. Текущий баланс: {new_balance:.2f} руб.")
+            
+            participant_id = db.get_participant_id(message.from_user.id)
+            admin_message = (
+                f"Пользователь {message.from_user.full_name} [{participant_id}] пополнил баланс на {amount:.2f} руб. "
+                f"Текущий баланс пользователя: {new_balance:.2f} руб."
+            )
+            for name, user_id, telegram_id in db.get_all_participants():
+                if db.is_admin(telegram_id):
+                    await bot.send_message(telegram_id, admin_message)
         else:
             await message.answer("Вы не зарегистрированы.")
     except ValueError:
