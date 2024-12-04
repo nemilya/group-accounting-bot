@@ -268,7 +268,6 @@ def create_training_keyboard(trainings):
          [InlineKeyboardButton(text=f"{date} {time} - {location}", callback_data=f"debit_{training_id}")]
          for training_id, date, time, location, fee, is_funds_debited in trainings if not is_funds_debited
      ]
-     buttons.append([InlineKeyboardButton(text="Отмена", callback_data="cancel_debit")])
      return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 @router.callback_query(lambda c: c.data == 'debit_funds')
