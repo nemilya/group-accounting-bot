@@ -137,12 +137,18 @@ async def poll_fee_received(message: Message, state: FSMContext):
     location = user_data['location']
     fee = user_data['fee']
 
-    # Create poll
-    poll_question = f"Тренировка {date} в {time} на {location}. Стоимость: {fee} руб."
-    poll_options = ["Смогу", "Приду с другом", "Не смогу", "Не определился"]
+    from datetime import datetime
+
+    # Array of weekdays in Russian
+    weekdays = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
+
+    # Format date
+    date_obj = datetime.strptime(date, "%Y-%m-%d")
+    formatted_date = date_obj.strftime("%d.%m.%Y")
+    weekday = weekdays[date_obj.weekday()]
 
     # Create poll
-    poll_question = f"Тренировка {date} в {time} на {location}. Стоимость: {fee} руб."
+    poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. Стоимость: {fee} руб."
     poll_options = ["Смогу", "Приду с другом", "Не смогу", "Не определился"]
 
     # Send poll to the group
