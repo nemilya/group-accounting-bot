@@ -286,6 +286,23 @@ async def handle_debit_funds_callback(callback_query: CallbackQuery):
 async def process_debit_training(callback_query: CallbackQuery):
     training_id = int(callback_query.data.split('_')[1])
     if db.debit_funds_for_training(training_id):
+        participants = db.execute(
+            "SELECT p.id, p.telegram_id, r.status FROM training_registrations r JOIN participants p ON r.participant_id = p.id WHERE r.training_id = ?",
+            (training_id,), fetchall=True
+        )
+        for participant_id, telegram_id, status in participants:
+            if status in ['смогу', 'приду с другом']:
+                amount_debited = db.execute(
+                    "SELECT fee FROM trainings WHERE id = ?",
+                    (training_id,), fetchone=True
+                )[0]
+                if status == 'приду с другом':
+                    amount_debited *= 2
+                new_balance = db.calculate_balance_by_id(participant_id)
+                await bot.send_message(
+                    telegram_id,
+                    f"С вашего счета списано: {amount_debited:.2f} руб. Ваш новый баланс: {new_balance:.2f} руб."
+                )
         await bot.answer_callback_query(callback_query.id, "Средства успешно списаны за тренировку.")
     else:
         await bot.answer_callback_query(callback_query.id, "Не удалось списать средства. Возможно, они уже списаны.")
