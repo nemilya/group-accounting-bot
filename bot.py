@@ -306,10 +306,6 @@ async def process_debit_training(callback_query: CallbackQuery):
     else:
         await bot.answer_callback_query(callback_query.id, "Не удалось списать средства. Возможно, они уже списаны.")
 
-@router.callback_query(lambda c: c.data == 'cancel_debit')
-async def cancel_debit(callback_query: CallbackQuery):
-    await bot.answer_callback_query(callback_query.id, "Операция отменена.")
-
 @dp.poll_answer()
 async def handle_poll_answer(poll_answer: PollAnswer):
     print(f"Received poll answer from user {poll_answer.user.id}")
