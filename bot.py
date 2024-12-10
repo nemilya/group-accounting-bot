@@ -161,7 +161,7 @@ async def poll_comment_received(message: Message, state: FSMContext):
 
     # Create poll question with comment if exists
     if comment:
-        poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. ({comment}). Стоимость: {fee} руб."
+        poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location} ({comment}). Стоимость: {fee} руб."
     else:
         poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. Стоимость: {fee} руб."
 
