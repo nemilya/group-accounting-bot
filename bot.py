@@ -139,6 +139,7 @@ async def poll_fee_received(message: Message, state: FSMContext):
 async def poll_comment_received(message: Message, state: FSMContext):
     comment_input = message.text.strip()
     comment = None if comment_input == '-' else comment_input
+    
     await state.update_data(comment=comment)
     
     user_data = await state.get_data()
@@ -160,7 +161,7 @@ async def poll_comment_received(message: Message, state: FSMContext):
 
     # Create poll question with comment if exists
     if comment:
-        poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. Комментарий: ({comment}). Стоимость: {fee} руб."
+        poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. ({comment}). Стоимость: {fee} руб."
     else:
         poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. Стоимость: {fee} руб."
 
@@ -296,7 +297,6 @@ async def list_trainings(callback_query: CallbackQuery):
         await bot.send_message(callback_query.from_user.id, f"Список тренировок:\n{training_list}")
     else:
         await bot.answer_callback_query(callback_query.id, "У вас нет прав для выполнения этой команды.")
-
 
 def create_training_keyboard(trainings):
      buttons = [
