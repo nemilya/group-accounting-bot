@@ -24,6 +24,7 @@ class PollCreation(StatesGroup):
     waiting_for_time = State()
     waiting_for_location = State()
     waiting_for_fee = State()
+    waiting_for_comment = State()
 
 # Define states for payment process
 class PaymentProcess(StatesGroup):
@@ -131,11 +132,21 @@ async def poll_fee_received(message: Message, state: FSMContext):
         return
 
     await state.update_data(fee=fee)
+    await message.answer("Введите комментарий к тренировке или '-' для отсутствия комментария:")
+    await state.set_state(PollCreation.waiting_for_comment)
+
+@dp.message(PollCreation.waiting_for_comment, lambda message: message.chat.type == 'private')
+async def poll_comment_received(message: Message, state: FSMContext):
+    comment_input = message.text.strip()
+    comment = None if comment_input == '-' else comment_input
+    await state.update_data(comment=comment)
+    
     user_data = await state.get_data()
     date = user_data['date']
     time = user_data['time']
     location = user_data['location']
     fee = user_data['fee']
+    comment = user_data.get('comment')
 
     from datetime import datetime
 
@@ -147,8 +158,12 @@ async def poll_fee_received(message: Message, state: FSMContext):
     formatted_date = date_obj.strftime("%d.%m.%Y")
     weekday = weekdays[date_obj.weekday()]
 
-    # Create poll
-    poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. Стоимость: {fee} руб."
+    # Create poll question with comment if exists
+    if comment:
+        poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. Комментарий: ({comment}). Стоимость: {fee} руб."
+    else:
+        poll_question = f"Тренировка {formatted_date} ({weekday}) в {time} на {location}. Стоимость: {fee} руб."
+
     poll_options = ["Смогу", "Приду с другом", "Не смогу", "Не определился"]
 
     # Send poll to the group
@@ -161,7 +176,7 @@ async def poll_fee_received(message: Message, state: FSMContext):
     )
 
     # Save poll to the database
-    training_id = db.add_training(date, time, location, fee)
+    training_id = db.add_training(date, time, location, fee, comment)
     db.link_poll_to_training(training_id, poll_message.poll.id)
 
     await message.answer("Опрос создан и отправлен всем участникам!")
@@ -259,7 +274,11 @@ async def list_trainings(callback_query: CallbackQuery):
     if db.is_admin(callback_query.from_user.id):
         trainings = db.get_all_trainings()
         training_list = []
-        for training_id, date, time, location, fee, is_funds_debited in trainings:
+        for training_id, date, time, location, fee, is_funds_debited, comment in trainings:
+            if comment:
+                comment_text = f" ({comment})"
+            else:
+                comment_text = ""
             participants = db.execute(
                 "SELECT p.name, r.status FROM training_registrations r JOIN participants p ON r.participant_id = p.id WHERE r.training_id = ?",
                 (training_id,), fetchall=True
@@ -270,7 +289,7 @@ async def list_trainings(callback_query: CallbackQuery):
             ])
             total_cost = sum(fee * (2 if status == 'приду с другом' else 1) for _, status in participants if status in ['смогу', 'приду с другом'])
             training_list.append(
-                f"[{training_id}] {date}, {time}, {location}, {fee} руб. | Участники: {participant_list} | Итоговая стоимость: {total_cost} руб. | Средства списаны: {'Да' if is_funds_debited else 'Нет'}"
+                f"[{training_id}] {date}, {time}, {location}{comment_text}, {fee} руб. | Участники: {participant_list} | Итоговая стоимость: {total_cost} руб. | Средства списаны: {'Да' if is_funds_debited else 'Нет'}"
             )
         training_list = "\n".join(training_list)
         await bot.answer_callback_query(callback_query.id)
@@ -281,8 +300,8 @@ async def list_trainings(callback_query: CallbackQuery):
 
 def create_training_keyboard(trainings):
      buttons = [
-         [InlineKeyboardButton(text=f"{date} {time} - {location}", callback_data=f"debit_{training_id}")]
-         for training_id, date, time, location, fee, is_funds_debited in trainings if not is_funds_debited
+         [InlineKeyboardButton(text=f"{date} {time} - {location}{' (' + comment + ')' if comment else ''}", callback_data=f"debit_{training_id}")]
+         for training_id, date, time, location, fee, is_funds_debited, comment in trainings if not is_funds_debited
      ]
      return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -305,12 +324,10 @@ async def process_debit_training(callback_query: CallbackQuery):
             "SELECT p.id, p.telegram_id, r.status FROM training_registrations r JOIN participants p ON r.participant_id = p.id WHERE r.training_id = ?",
             (training_id,), fetchall=True
         )
+        fee = db.get_training_fee(training_id)
         for participant_id, telegram_id, status in participants:
             if status in ['смогу', 'приду с другом']:
-                amount_debited = db.execute(
-                    "SELECT fee FROM trainings WHERE id = ?",
-                    (training_id,), fetchone=True
-                )[0]
+                amount_debited = fee
                 if status == 'приду с другом':
                     amount_debited *= 2
                 new_balance = db.calculate_balance_by_id(participant_id)
@@ -375,7 +392,7 @@ async def cmd_list_trainings(message: Message):
         trainings = db.get_all_trainings()
         training_list = "\n".join([
             f"ID: {training_id}, Дата: {date}, Время: {time}, Место: {location}, Стоимость: {fee} руб."
-            for training_id, date, time, location, fee in trainings
+            for training_id, date, time, location, fee, is_funds_debited, comment in trainings
         ])
         await message.answer(f"Список тренировок:\n{training_list}")
     else:

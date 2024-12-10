@@ -45,10 +45,13 @@ class Database:
     def set_admin_by_user_id(self, user_id):
         self.execute("UPDATE participants SET is_admin = 1 WHERE id = ?", (user_id,), commit=True)
 
-    def add_training(self, date, time, location, fee):
+    def add_training(self, date, time, location, fee, comment=None):
         connection = self.connection
         cursor = connection.cursor()
-        cursor.execute("INSERT INTO trainings (date, time, location, fee) VALUES (?, ?, ?, ?)", (date, time, location, fee))
+        if comment:
+            cursor.execute("INSERT INTO trainings (date, time, location, fee, comment) VALUES (?, ?, ?, ?, ?)", (date, time, location, fee, comment))
+        else:
+            cursor.execute("INSERT INTO trainings (date, time, location, fee) VALUES (?, ?, ?, ?)", (date, time, location, fee))
         connection.commit()
         training_id = cursor.lastrowid
         self.logger(f"New training_id: {training_id}")
@@ -163,7 +166,7 @@ class Database:
         return self.execute(sql, fetchall=True)
 
     def get_all_trainings(self):
-        sql = "SELECT id, date, time, location, fee, is_funds_debited FROM trainings"
+        sql = "SELECT id, date, time, location, fee, is_funds_debited, comment FROM trainings"
         return self.execute(sql, fetchall=True)
 
     def debit_funds_for_training(self, training_id):
@@ -187,4 +190,3 @@ class Database:
 
         self.execute("UPDATE trainings SET is_funds_debited = 1 WHERE id = ?", (training_id,), commit=True)
         return True
-

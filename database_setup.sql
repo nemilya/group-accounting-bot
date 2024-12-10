@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS trainings (
     date TEXT NOT NULL,
     time TEXT NOT NULL,
     location TEXT NOT NULL,
+    comment TEXT,
     fee REAL NOT NULL,
     is_funds_debited BOOLEAN DEFAULT 0
 );
@@ -44,4 +45,3 @@ CREATE TABLE IF NOT EXISTS training_polls (
     poll_id TEXT UNIQUE,
     FOREIGN KEY (training_id) REFERENCES trainings(id)
 );
-
